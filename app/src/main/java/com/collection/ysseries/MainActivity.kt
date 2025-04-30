@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -38,8 +39,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.collection.ysseries.data.YsSeriesRepository
 import com.collection.ysseries.model.BottomBarItem
-import com.collection.ysseries.model.YsSeriesData.series
 import com.collection.ysseries.ui.components.ScrollToTopButton
 import com.collection.ysseries.ui.components.Search
 import com.collection.ysseries.ui.components.SectionText
@@ -74,7 +76,11 @@ fun YsSeriesApp(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun Banner(modifier: Modifier = Modifier) {
+fun Banner(
+    modifier: Modifier = Modifier,
+    viewModel: MainActivityViewModel = viewModel(factory = ViewModelFactory(YsSeriesRepository()))
+) {
+    val query by viewModel.query
     Box(modifier = Modifier) {
         Image(
             painter = painterResource(R.drawable.ys_series_logo_wide),
@@ -82,13 +88,18 @@ fun Banner(modifier: Modifier = Modifier) {
             contentScale = ContentScale.FillWidth,
             modifier = modifier.height(160.dp)
         )
-        Search()
+        Search(
+            query = query,
+            onQueryChange = viewModel::search,
+            modifier = Modifier.align(Alignment.Center)
+        )
     }
 }
 
 @Composable
 fun SeriesColumn(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: MainActivityViewModel = viewModel(factory = ViewModelFactory(YsSeriesRepository()))
 ) {
     Box(
         modifier = modifier
@@ -104,11 +115,13 @@ fun SeriesColumn(
             contentPadding = PaddingValues(bottom = 8.dp),
             modifier = modifier
         ) {
-            items(series, key = { it.title }) { series ->
+            items(viewModel.series.value, key = { it.title }) { series ->
                 SeriesItem(
                     title = series.title,
                     image = series.image,
-                    releaseYear = series.releaseYear
+                    releaseYear = series.releaseYear,
+                    modifier = Modifier
+                        .animateItem(placementSpec = tween(durationMillis = 100))
                 )
             }
         }

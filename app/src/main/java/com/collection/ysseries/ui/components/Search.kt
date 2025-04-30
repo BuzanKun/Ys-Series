@@ -13,18 +13,20 @@ import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.collection.ysseries.ui.theme.YsSeriesTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Search(modifier: Modifier = Modifier) {
+fun Search(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     SearchBar(
         inputField = {
             SearchBarDefaults.InputField(
-                query = "",
-                onQueryChange = {},
+                query = query,
+                onQueryChange = onQueryChange,
                 onSearch = {},
                 expanded = false,
                 onExpandedChange = {},
@@ -36,7 +38,7 @@ fun Search(modifier: Modifier = Modifier) {
                     )
                 },
                 placeholder = {
-                    Text("Search")
+                    Text("Search Series")
                 }
             )
         },
@@ -53,12 +55,4 @@ fun Search(modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .heightIn(min = 32.dp)
     ) { }
-}
-
-@Preview
-@Composable
-private fun SearchPreview() {
-    YsSeriesTheme {
-        Search()
-    }
 }
