@@ -3,15 +3,21 @@ package com.collection.ysseries
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Favorite
@@ -22,29 +28,31 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.collection.ysseries.model.BottomBarItem
-import com.collection.ysseries.model.Series
-import com.collection.ysseries.model.ysSeriesData
+import com.collection.ysseries.model.YsSeriesData.series
+import com.collection.ysseries.ui.components.ScrollToTopButton
 import com.collection.ysseries.ui.components.Search
 import com.collection.ysseries.ui.components.SectionText
 import com.collection.ysseries.ui.components.SeriesItem
 import com.collection.ysseries.ui.theme.YsSeriesTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             YsSeriesTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    YsSeriesApp(
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                YsSeriesApp()
             }
         }
     }
@@ -60,7 +68,7 @@ fun YsSeriesApp(modifier: Modifier = Modifier) {
         ) {
             Banner()
             SectionText("Ys Series")
-            SeriesColumn(ysSeriesData)
+            SeriesColumn()
         }
     }
 }
@@ -80,15 +88,45 @@ fun Banner(modifier: Modifier = Modifier) {
 
 @Composable
 fun SeriesColumn(
-    listSeries: List<Series>,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    Box(
         modifier = modifier
     ) {
-        items(listSeries, key = { it.title }) { series ->
-            SeriesItem(series)
+        val scope = rememberCoroutineScope()
+        val listState = rememberLazyListState()
+        val showButton: Boolean by remember {
+            derivedStateOf { listState.firstVisibleItemIndex > 0 }
+        }
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            state = listState,
+            contentPadding = PaddingValues(bottom = 8.dp),
+            modifier = modifier
+        ) {
+            items(series, key = { it.title }) { series ->
+                SeriesItem(
+                    title = series.title,
+                    image = series.image,
+                    releaseYear = series.releaseYear
+                )
+            }
+        }
+        AnimatedVisibility(
+            visible = showButton,
+            enter = fadeIn() + slideInVertically(),
+            exit = fadeOut() + slideOutVertically(),
+            modifier = Modifier
+                .padding(bottom = 32.dp, end = 16.dp)
+                .align(Alignment.BottomEnd)
+        ) {
+            ScrollToTopButton(
+                onClick = {
+                    scope.launch {
+                        listState.scrollToItem(index = 0)
+                    }
+                }
+            )
         }
     }
 }
@@ -134,10 +172,6 @@ fun BottomBar(modifier: Modifier = Modifier) {
 @Composable
 fun YsSeriesAppPreview() {
     YsSeriesTheme {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            YsSeriesApp(
-                modifier = Modifier.padding(innerPadding)
-            )
-        }
+        YsSeriesApp()
     }
 }

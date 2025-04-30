@@ -21,11 +21,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.collection.ysseries.R
-import com.collection.ysseries.model.Series
 
 @Composable
 fun SeriesItem(
-    series: Series,
+    title: String,
+    image: Int,
+    releaseYear: Int,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -39,7 +40,7 @@ fun SeriesItem(
             modifier = Modifier.fillMaxWidth()
         ) {
             Image(
-                painter = painterResource(series.image),
+                painter = painterResource(image),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -53,13 +54,13 @@ fun SeriesItem(
                     .weight(1f)
             ) {
                 Text(
-                    text = series.title,
+                    text = title,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = series.releaseYear.toString(),
+                    text = releaseYear.toString(),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -72,7 +73,9 @@ fun SeriesItem(
 private fun SeriesItemPreview() {
     MaterialTheme {
         SeriesItem(
-            series = Series(R.drawable.ys1_2_logo, "Ys 1 & 2: Chronicles", 2009)
+            image = R.drawable.ys1_2_logo,
+            title = "Ys I: Ancient Ys Vanished",
+            releaseYear = 1987
         )
     }
 }
