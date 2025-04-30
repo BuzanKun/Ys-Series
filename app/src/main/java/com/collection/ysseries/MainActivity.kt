@@ -3,22 +3,7 @@ package com.collection.ysseries
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Favorite
@@ -29,25 +14,21 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.collection.ysseries.data.YsSeriesRepository
-import com.collection.ysseries.model.BottomBarItem
-import com.collection.ysseries.ui.components.ScrollToTopButton
-import com.collection.ysseries.ui.components.Search
-import com.collection.ysseries.ui.components.SectionText
-import com.collection.ysseries.ui.components.SeriesItem
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.collection.ysseries.ui.navigation.NavigationItem
+import com.collection.ysseries.ui.navigation.Screen
+import com.collection.ysseries.ui.screen.about.AboutScreen
+import com.collection.ysseries.ui.screen.favorite.FavoriteScreen
+import com.collection.ysseries.ui.screen.home.HomeScreen
 import com.collection.ysseries.ui.theme.YsSeriesTheme
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,106 +42,58 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun YsSeriesApp(modifier: Modifier = Modifier) {
+fun YsSeriesApp(
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
+) {
     Scaffold(
-        bottomBar = { BottomBar() }
+        bottomBar = { BottomBar(navController) },
+        modifier = modifier
     ) { innerPadding ->
-        Column(
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Home.route,
             modifier = modifier.padding(innerPadding)
         ) {
-            Banner()
-            SectionText("Ys Series")
-            SeriesColumn()
-        }
-    }
-}
-
-@Composable
-fun Banner(
-    modifier: Modifier = Modifier,
-    viewModel: MainActivityViewModel = viewModel(factory = ViewModelFactory(YsSeriesRepository()))
-) {
-    val query by viewModel.query
-    Box(modifier = Modifier) {
-        Image(
-            painter = painterResource(R.drawable.ys_series_logo_wide),
-            contentDescription = null,
-            contentScale = ContentScale.FillWidth,
-            modifier = modifier.height(160.dp)
-        )
-        Search(
-            query = query,
-            onQueryChange = viewModel::search,
-            modifier = Modifier.align(Alignment.Center)
-        )
-    }
-}
-
-@Composable
-fun SeriesColumn(
-    modifier: Modifier = Modifier,
-    viewModel: MainActivityViewModel = viewModel(factory = ViewModelFactory(YsSeriesRepository()))
-) {
-    Box(
-        modifier = modifier
-    ) {
-        val scope = rememberCoroutineScope()
-        val listState = rememberLazyListState()
-        val showButton: Boolean by remember {
-            derivedStateOf { listState.firstVisibleItemIndex > 0 }
-        }
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            state = listState,
-            contentPadding = PaddingValues(bottom = 8.dp),
-            modifier = modifier
-        ) {
-            items(viewModel.series.value, key = { it.title }) { series ->
-                SeriesItem(
-                    title = series.title,
-                    image = series.image,
-                    releaseYear = series.releaseYear,
-                    modifier = Modifier
-                        .animateItem(placementSpec = tween(durationMillis = 100))
-                )
+            composable(Screen.Home.route) {
+                HomeScreen()
+            }
+            composable(Screen.Favorite.route) {
+                FavoriteScreen()
+            }
+            composable(Screen.About.route) {
+                AboutScreen()
             }
         }
-        AnimatedVisibility(
-            visible = showButton,
-            enter = fadeIn() + slideInVertically(),
-            exit = fadeOut() + slideOutVertically(),
-            modifier = Modifier
-                .padding(bottom = 32.dp, end = 16.dp)
-                .align(Alignment.BottomEnd)
-        ) {
-            ScrollToTopButton(
-                onClick = {
-                    scope.launch {
-                        listState.scrollToItem(index = 0)
-                    }
-                }
-            )
-        }
     }
 }
 
 @Composable
-fun BottomBar(modifier: Modifier = Modifier) {
+private fun BottomBar(
+    navController: NavHostController,
+    modifier: Modifier = Modifier
+) {
     NavigationBar(
         modifier = modifier
     ) {
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currenRoute = navBackStackEntry?.destination?.route
+
         val navigationItems = listOf(
-            BottomBarItem(
+            NavigationItem(
                 title = "Home",
-                icon = Icons.Default.Home
+                icon = Icons.Default.Home,
+                screen = Screen.Home
             ),
-            BottomBarItem(
+            NavigationItem(
                 title = "Favorite",
-                icon = Icons.Default.Favorite
+                icon = Icons.Default.Favorite,
+                screen = Screen.Favorite
             ),
-            BottomBarItem(
-                title = "Profile",
-                icon = Icons.Default.AccountCircle
+            NavigationItem(
+                title = "About",
+                icon = Icons.Default.AccountCircle,
+                screen = Screen.About
             ),
         )
         navigationItems.map {
@@ -174,8 +107,16 @@ fun BottomBar(modifier: Modifier = Modifier) {
                 label = {
                     Text(it.title)
                 },
-                selected = it.title == navigationItems[0].title,
-                onClick = {}
+                selected = currenRoute == it.screen.route,
+                onClick = {
+                    navController.navigate(it.screen.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        restoreState = true
+                        launchSingleTop = true
+                    }
+                }
             )
         }
     }

@@ -9,7 +9,7 @@ import com.collection.ysseries.model.YsSeries
 
 class MainActivityViewModel(private val repository: YsSeriesRepository) : ViewModel() {
     private val _series = mutableStateOf(
-        repository.getSeries()
+        repository.getAllSeries()
     )
 
     val series: State<List<YsSeries>> get() = _series
