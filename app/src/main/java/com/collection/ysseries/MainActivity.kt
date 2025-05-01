@@ -19,13 +19,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.collection.ysseries.ui.navigation.NavigationItem
 import com.collection.ysseries.ui.navigation.Screen
 import com.collection.ysseries.ui.screen.about.AboutScreen
+import com.collection.ysseries.ui.screen.detail.DetaiLScreen
 import com.collection.ysseries.ui.screen.favorite.FavoriteScreen
 import com.collection.ysseries.ui.screen.home.HomeScreen
 import com.collection.ysseries.ui.theme.YsSeriesTheme
@@ -46,8 +49,15 @@ fun YsSeriesApp(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currenRoute = navBackStackEntry?.destination?.route
+
     Scaffold(
-        bottomBar = { BottomBar(navController) },
+        bottomBar = {
+            if (currenRoute != Screen.DetailSeries.route) {
+                BottomBar(navController)
+            }
+        },
         modifier = modifier
     ) { innerPadding ->
         NavHost(
@@ -56,13 +66,29 @@ fun YsSeriesApp(
             modifier = modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) {
-                HomeScreen()
+                HomeScreen(
+                    navigateToDetail = { seriesId ->
+                        navController.navigate(Screen.DetailSeries.createRoute(seriesId))
+                    }
+                )
             }
             composable(Screen.Favorite.route) {
                 FavoriteScreen()
             }
             composable(Screen.About.route) {
                 AboutScreen()
+            }
+            composable(
+                route = Screen.DetailSeries.route,
+                arguments = listOf(navArgument("seriesId") { type = NavType.IntType })
+            ) {
+                val id = it.arguments?.getInt("seriesId") ?: -1
+                DetaiLScreen(
+                    seriesId = id,
+                    navigateBack = {
+                        navController.navigateUp()
+                    }
+                )
             }
         }
     }
@@ -73,12 +99,12 @@ private fun BottomBar(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currenRoute = navBackStackEntry?.destination?.route
+
     NavigationBar(
         modifier = modifier
     ) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currenRoute = navBackStackEntry?.destination?.route
-
         val navigationItems = listOf(
             NavigationItem(
                 title = "Home",

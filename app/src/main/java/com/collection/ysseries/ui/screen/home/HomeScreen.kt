@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -27,10 +29,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.collection.ysseries.MainActivityViewModel
 import com.collection.ysseries.R
 import com.collection.ysseries.ViewModelFactory
-import com.collection.ysseries.data.YsSeriesRepository
+import com.collection.ysseries.di.Injection
+import com.collection.ysseries.model.YsSeries
+import com.collection.ysseries.ui.common.UiState
 import com.collection.ysseries.ui.components.ScrollToTopButton
 import com.collection.ysseries.ui.components.Search
 import com.collection.ysseries.ui.components.SectionText
@@ -38,20 +41,52 @@ import com.collection.ysseries.ui.components.SeriesItem
 import kotlinx.coroutines.launch
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = viewModel(factory = ViewModelFactory(Injection.provideRepository())),
+    navigateToDetail: (Int) -> Unit
+) {
+    viewModel.uiState.collectAsState(initial = UiState.Loading).value.let { uiState ->
+        when (uiState) {
+            is UiState.Loading -> {
+                viewModel.getAllSeries()
+            }
+
+            is UiState.Success<*> -> {
+                HomeContent(
+                    seriesList = (uiState as UiState.Success<List<YsSeries>>).data,
+                    modifier = modifier,
+                    navigateToDetail = navigateToDetail
+                )
+            }
+
+            is UiState.Error -> {}
+        }
+    }
+}
+
+@Composable
+fun HomeContent(
+    seriesList: List<YsSeries>,
+    modifier: Modifier = Modifier,
+    navigateToDetail: (Int) -> Unit
+) {
     Column(
         modifier = modifier
     ) {
         Banner()
         SectionText("Ys Series")
-        SeriesColumn()
+        SeriesColumn(
+            navigateToDetail = navigateToDetail,
+            series = seriesList
+        )
     }
 }
 
 @Composable
 fun Banner(
     modifier: Modifier = Modifier,
-    viewModel: MainActivityViewModel = viewModel(factory = ViewModelFactory(YsSeriesRepository()))
+    viewModel: HomeViewModel = viewModel(factory = ViewModelFactory(Injection.provideRepository()))
 ) {
     val query by viewModel.query
     Box(modifier = Modifier) {
@@ -71,8 +106,9 @@ fun Banner(
 
 @Composable
 fun SeriesColumn(
+    series: List<YsSeries>,
     modifier: Modifier = Modifier,
-    viewModel: MainActivityViewModel = viewModel(factory = ViewModelFactory(YsSeriesRepository()))
+    navigateToDetail: (Int) -> Unit
 ) {
     Box(
         modifier = modifier
@@ -88,13 +124,16 @@ fun SeriesColumn(
             contentPadding = PaddingValues(bottom = 8.dp),
             modifier = modifier
         ) {
-            items(viewModel.series.value, key = { it.id }) { series ->
+            items(series, key = { it.seriesId }) { series ->
                 SeriesItem(
                     title = series.title,
                     image = series.image,
                     releaseYear = series.releaseYear,
                     modifier = Modifier
                         .animateItem(placementSpec = tween(durationMillis = 100))
+                        .clickable {
+                            navigateToDetail(series.seriesId)
+                        }
                 )
             }
         }

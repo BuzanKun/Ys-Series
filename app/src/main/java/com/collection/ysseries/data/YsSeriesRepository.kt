@@ -1,19 +1,21 @@
 package com.collection.ysseries.data
 
-import com.collection.ysseries.model.FavoriteSeries
 import com.collection.ysseries.model.YsSeries
 import com.collection.ysseries.model.YsSeriesData
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 class YsSeriesRepository {
-    private val favoriteSeries = mutableListOf<FavoriteSeries>()
 
-    fun getAllSeries(): List<YsSeries> {
-        return YsSeriesData.series
+    private val ysSeries = YsSeriesData.series.toMutableList()
+
+    fun getAllSeries(): Flow<List<YsSeries>> {
+        return flowOf(YsSeriesData.series)
     }
 
-    fun searchSeries(query: String): List<YsSeries> {
-        return YsSeriesData.series.filter {
-            it.title.contains(query, ignoreCase = true)
+    fun getSeriesById(seriesId: Int): YsSeries {
+        return ysSeries.first {
+            it.seriesId == seriesId
         }
     }
 
